@@ -1,0 +1,71 @@
+import { X, Users, Calendar, Globe2, User } from 'lucide-react';
+import type { Actor } from '../types';
+
+interface ActorDetailModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  actor: Actor | null;
+}
+
+export default function ActorDetailModal({ isOpen, onClose, actor }: ActorDetailModalProps) {
+  if (!isOpen || !actor) return null;
+
+  const formattedDob = actor.dob
+    ? new Date(actor.dob).toLocaleDateString('vi-VN')
+    : 'Chưa rõ';
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 p-2 rounded-full bg-white/80 dark:bg-gray-900/80 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-900 z-10"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* Avatar - dùng background-image để tránh lệ thuộc tỷ lệ ảnh gốc */}
+        <div
+          className="aspect-[3/4] w-full bg-gray-900 bg-cover bg-center relative overflow-hidden"
+          style={actor.avatarUrl ? { backgroundImage: `url(${actor.avatarUrl})` } : undefined}
+          role="img"
+          aria-label={actor.fullName}
+        >
+          {!actor.avatarUrl && (
+            <div className="w-full h-full flex items-center justify-center text-6xl font-bold text-gray-500 bg-gray-800">
+              {actor.fullName.charAt(0)}
+            </div>
+          )}
+        </div>
+
+        <div className="p-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Users className="w-6 h-6 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+            {actor.fullName}
+          </h2>
+
+          <div className="grid grid-cols-1 gap-3 mt-5 text-sm">
+            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+              <User className="w-4 h-4 text-indigo-500" />
+              <span>Giới tính: <b>{actor.gender === 'MALE' ? 'Nam' : actor.gender === 'FEMALE' ? 'Nữ' : 'N/A'}</b></span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+              <Calendar className="w-4 h-4 text-indigo-500" />
+              <span>Ngày sinh: <b>{formattedDob}</b></span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+              <Globe2 className="w-4 h-4 text-indigo-500" />
+              <span>Quốc gia: <b>{actor.country || 'Chưa rõ'}</b></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
