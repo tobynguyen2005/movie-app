@@ -44,7 +44,7 @@ export default function MovieDetailModal({ isOpen, onClose, movie }: MovieDetail
           {/* Poster - luôn giữ tỷ lệ 3:4 cố định bằng background-image (không dùng <img> để tránh
               trình duyệt lấy tỷ lệ ảnh gốc đè lên box) */}
           <div
-            className="md:w-1/3 w-full aspect-[3/4] bg-gray-100 dark:bg-gray-700 bg-cover bg-top flex-shrink-0 self-start md:sticky md:top-0"
+            className="md:w-1/3 w-full aspect-[3/4] bg-gray-100 dark:bg-gray-700 bg-cover bg-center bg-no-repeat flex-shrink-0 self-start md:sticky md:top-0"
             style={movie.posterUrl ? { backgroundImage: `url(${movie.posterUrl})` } : undefined}
             role="img"
             aria-label={movie.title}

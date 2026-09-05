@@ -152,7 +152,7 @@ export default function MoviesPage() {
                   {/* Poster chuẩn tỷ lệ 3:4 — dùng background-image thay vì <img> để tránh trình duyệt
                       lấy tỷ lệ gốc của ảnh đè lên box (nguyên nhân khiến poster cao thấp lệch nhau) */}
                   <div
-                    className="aspect-[3/4] w-full flex-shrink-0 bg-gray-100 dark:bg-gray-700 bg-cover bg-top relative overflow-hidden"
+                    className="aspect-[3/4] w-full flex-shrink-0 bg-gray-100 dark:bg-gray-700 bg-cover bg-center bg-no-repeat relative overflow-hidden"
                     style={movie.posterUrl ? { backgroundImage: `url(${movie.posterUrl})` } : undefined}
                     role="img"
                     aria-label={movie.title}
