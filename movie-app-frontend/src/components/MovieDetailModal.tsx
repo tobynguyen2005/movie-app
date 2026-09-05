@@ -59,27 +59,26 @@ export default function MovieDetailModal({ isOpen, onClose, movie }: MovieDetail
           {/* Info */}
           <div className="p-6 flex-1">
             <div className="flex items-start justify-between gap-3 pr-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 min-w-0">
                 <Film className="w-6 h-6 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-                {movie.title}
+                <span className="truncate">{movie.title}</span>
               </h2>
+              <span className={`flex-shrink-0 inline-block px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${statusColor[movie.status]}`}>
+                {statusLabel[movie.status] ?? movie.status}
+              </span>
             </div>
 
-            <span className={`inline-block mt-3 px-3 py-1 rounded-full text-xs font-semibold ${statusColor[movie.status]}`}>
-              {statusLabel[movie.status] ?? movie.status}
-            </span>
-
-            <div className="grid grid-cols-2 gap-4 mt-5 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5 text-sm">
               <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                <Calendar className="w-4 h-4 text-indigo-500" />
+                <Calendar className="w-4 h-4 text-indigo-500 flex-shrink-0" />
                 <span>Năm phát hành: <b>{movie.releaseYear || 'N/A'}</b></span>
               </div>
               <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                <Clapperboard className="w-4 h-4 text-indigo-500" />
+                <Clapperboard className="w-4 h-4 text-indigo-500 flex-shrink-0" />
                 <span>Số tập: <b>{movie.totalEpisodes ?? 'N/A'}</b></span>
               </div>
-              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 col-span-2">
-                <Globe2 className="w-4 h-4 text-indigo-500" />
+              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                <Globe2 className="w-4 h-4 text-indigo-500 flex-shrink-0" />
                 <span>Quốc gia: <b>{movie.country || 'N/A'}</b></span>
               </div>
             </div>
