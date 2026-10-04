@@ -269,8 +269,10 @@ export default function MovieModal({
     void saveMovie();
   };
 
+  const normalizedActorSearchKeyword = actorSearchKeyword.trim().toLowerCase();
+
   const filteredActors = availableActors.filter((actor) =>
-    actor.fullName.toLowerCase().includes(actorSearchKeyword.toLowerCase()),
+    actor.fullName.toLowerCase().includes(normalizedActorSearchKeyword),
   );
 
   const inputClass =

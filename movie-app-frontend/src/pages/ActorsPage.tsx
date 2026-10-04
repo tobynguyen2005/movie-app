@@ -323,6 +323,41 @@ export default function ActorsPage() {
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
         actor={selectedActor}
+        actors={actorPage?.content ?? []}
+        onPrevious={() => {
+          if (!selectedActor || !actorPage?.content) return;
+          const index = actorPage.content.findIndex(
+            (item) => item.id === selectedActor.id,
+          );
+          if (index > 0) {
+            setSelectedActor(actorPage.content[index - 1]);
+          }
+        }}
+        onNext={() => {
+          if (!selectedActor || !actorPage?.content) return;
+          const index = actorPage.content.findIndex(
+            (item) => item.id === selectedActor.id,
+          );
+          if (index >= 0 && index < actorPage.content.length - 1) {
+            setSelectedActor(actorPage.content[index + 1]);
+          }
+        }}
+        hasPrevious={Boolean(
+          selectedActor &&
+            actorPage?.content &&
+            actorPage.content.findIndex((item) => item.id === selectedActor.id) >
+              0,
+        )}
+        hasNext={Boolean(
+          selectedActor &&
+            actorPage?.content &&
+            (() => {
+              const index = actorPage.content.findIndex(
+                (item) => item.id === selectedActor.id,
+              );
+              return index >= 0 && index < actorPage.content.length - 1;
+            })(),
+        )}
       />
 
       <ActionPopup
