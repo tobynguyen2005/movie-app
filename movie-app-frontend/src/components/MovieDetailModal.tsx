@@ -41,15 +41,17 @@ export default function MovieDetailModal({ isOpen, onClose, movie }: MovieDetail
         </button>
 
         <div className="flex flex-col md:flex-row">
-          {/* Poster - luôn giữ tỷ lệ 3:4 cố định bằng background-image (không dùng <img> để tránh
-              trình duyệt lấy tỷ lệ ảnh gốc đè lên box) */}
+          {/* Poster: trên desktop sẽ tự kéo cao bằng phần thông tin của modal; trên mobile vẫn giữ tỷ lệ 3:4 */}
           <div
-            className="md:w-1/3 w-full aspect-[3/4] bg-gray-100 dark:bg-gray-700 bg-cover bg-center bg-no-repeat flex-shrink-0 self-start md:sticky md:top-0"
-            style={movie.posterUrl ? { backgroundImage: `url(${movie.posterUrl})` } : undefined}
-            role="img"
-            aria-label={movie.title}
+            className="md:w-[240px] w-full aspect-[3/4] md:aspect-auto md:self-stretch bg-gray-100 dark:bg-gray-700 flex-shrink-0 overflow-hidden"
           >
-            {!movie.posterUrl && (
+            {movie.posterUrl ? (
+              <img
+                src={movie.posterUrl}
+                alt={movie.title}
+                className="w-full h-full object-cover block"
+              />
+            ) : (
               <div className="w-full h-full flex items-center justify-center text-6xl font-bold text-gray-300 dark:text-gray-500">
                 {movie.title.charAt(0)}
               </div>
@@ -57,7 +59,7 @@ export default function MovieDetailModal({ isOpen, onClose, movie }: MovieDetail
           </div>
 
           {/* Info */}
-          <div className="p-6 flex-1">
+          <div className="p-6 flex-1 min-w-0">
             <div className="flex items-start justify-between gap-3 pr-8">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 min-w-0">
                 <Film className="w-6 h-6 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />

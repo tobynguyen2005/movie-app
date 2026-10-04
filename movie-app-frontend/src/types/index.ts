@@ -1,5 +1,5 @@
 export type MovieStatus = 'PLAN_TO_WATCH' | 'WATCHING' | 'COMPLETED' | 'DROPPED';
-export type ActorGender = 'MALE' | 'FEMALE';
+export type ActorGender = 'MALE' | 'FEMALE' | 'OTHER';
 
 export interface Genre {
   id: number;

@@ -1,14 +1,25 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Plus, Tags, Edit, Trash2 } from 'lucide-react';
 import { genreService } from '../services/genreService';
+import { getApiErrorMessage } from '../services/api';
 import type { Genre } from '../types';
 import GenreModal from '../components/GenreModal';
+import ActionPopup, { type PopupType } from '../components/ActionPopup';
 
 export default function GenresPage() {
   const [genres, setGenres] = useState<Genre[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGenre, setEditingGenre] = useState<Genre | null>(null);
+
+  type PopupState = {
+    type: PopupType;
+    title: string;
+    message: string;
+    confirmText?: string;
+    onConfirm?: () => void | Promise<void>;
+  };
+  const [popup, setPopup] = useState<PopupState | null>(null);
 
   useEffect(() => { fetchGenres(); }, []);
 
@@ -17,20 +28,38 @@ export default function GenresPage() {
       setLoading(true); 
       setGenres(await genreService.getAll()); 
     } catch (err) { 
-      console.error(err); 
+      console.error(err);
+      setPopup({
+        type: 'error',
+        title: 'Không thể tải danh sách thể loại',
+        message: getApiErrorMessage(err, 'Không thể kết nối tới máy chủ. Vui lòng thử lại.'),
+      });
     } finally { 
       setLoading(false); 
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Xóa thể loại này sẽ ảnh hưởng đến các phim đang có. Bạn chắc chắn chứ?')) return;
-    try { 
-      await genreService.delete(id); 
-      setGenres(genres.filter(g => g.id !== id)); 
-    } catch (err) { 
-      alert('Lỗi khi xóa thể loại!'); 
-    }
+  const handleDelete = (id: number) => {
+    const genre = genres.find(item => item.id === id);
+    setPopup({
+      type: 'confirm',
+      title: 'Xác nhận xóa thể loại',
+      message: `Xóa \"${genre?.name || 'thể loại này'}\" có thể ảnh hưởng đến các phim đang sử dụng thể loại. Bạn chắc chắn muốn tiếp tục?`,
+      confirmText: 'Xóa thể loại',
+      onConfirm: async () => {
+        try {
+          await genreService.delete(id);
+          setGenres(prev => prev.filter(g => g.id !== id));
+          setPopup(null);
+        } catch (err) {
+          setPopup({
+            type: 'error',
+            title: 'Không thể xóa thể loại',
+            message: getApiErrorMessage(err, 'Đã xảy ra lỗi khi xóa thể loại.'),
+          });
+        }
+      },
+    });
   };
 
   return (
@@ -76,6 +105,16 @@ export default function GenresPage() {
       )}
       
       <GenreModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSuccess={fetchGenres} initialData={editingGenre} />
+
+      <ActionPopup
+        isOpen={!!popup}
+        type={popup?.type}
+        title={popup?.title ?? ''}
+        message={popup?.message ?? ''}
+        confirmText={popup?.confirmText}
+        onConfirm={popup?.onConfirm}
+        onClose={() => setPopup(null)}
+      />
     </div>
   );
 }
