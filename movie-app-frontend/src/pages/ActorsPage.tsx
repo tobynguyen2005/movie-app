@@ -27,6 +27,7 @@ export default function ActorsPage() {
     birthYear: "",
   });
   const [currentPage, setCurrentPage] = useState(0);
+  const [pageInput, setPageInput] = useState("1");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingActor, setEditingActor] = useState<Actor | null>(null);
@@ -78,7 +79,9 @@ export default function ActorsPage() {
         setActorPage(data);
       }
 
-      setCurrentPage(pageIndex);
+      const safePage = Math.max(0, Math.min(pageIndex, Math.max(0, (Array.isArray(data) ? 1 : data.totalPages) - 1)));
+      setCurrentPage(safePage);
+      setPageInput(String(safePage + 1));
     } catch (err) {
       console.error("Lỗi tải diễn viên", err);
       setPopup({
@@ -99,7 +102,7 @@ export default function ActorsPage() {
   ) => {
     setFilters({
       ...filters,
-      [e.target.name]: e.target.value.trim(),
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -287,9 +290,28 @@ export default function ActorsPage() {
               >
                 <ChevronLeft className="w-5 h-5 dark:text-white" />
               </button>
-              <span className="text-gray-700 dark:text-gray-300 font-medium">
-                Trang {currentPage + 1} / {actorPage.totalPages}
-              </span>
+              <span className="text-gray-700 dark:text-gray-300 font-medium">Trang</span>
+              <input
+                aria-label="Đi đến trang diễn viên"
+                type="number"
+                min={1}
+                max={actorPage.totalPages}
+                value={pageInput}
+                onChange={(e) => setPageInput(e.target.value)}
+                onBlur={() => {
+                  const requested = Number(pageInput);
+                  const page = Math.max(1, Math.min(Number.isFinite(requested) && pageInput.trim() !== "" ? Math.trunc(requested) : 1, actorPage.totalPages));
+                  setPageInput(String(page));
+                  if (page - 1 !== currentPage) fetchActors(page - 1);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.currentTarget.blur();
+                  }
+                }}
+                className={`${inputClass} w-20 text-center`}
+              />
+              <span className="text-gray-700 dark:text-gray-300 font-medium">/ {actorPage.totalPages}</span>
               <button
                 disabled={actorPage.last}
                 onClick={() => fetchActors(currentPage + 1)}
@@ -344,19 +366,19 @@ export default function ActorsPage() {
         }}
         hasPrevious={Boolean(
           selectedActor &&
-            actorPage?.content &&
-            actorPage.content.findIndex((item) => item.id === selectedActor.id) >
-              0,
+          actorPage?.content &&
+          actorPage.content.findIndex((item) => item.id === selectedActor.id) >
+            0,
         )}
         hasNext={Boolean(
           selectedActor &&
-            actorPage?.content &&
-            (() => {
-              const index = actorPage.content.findIndex(
-                (item) => item.id === selectedActor.id,
-              );
-              return index >= 0 && index < actorPage.content.length - 1;
-            })(),
+          actorPage?.content &&
+          (() => {
+            const index = actorPage.content.findIndex(
+              (item) => item.id === selectedActor.id,
+            );
+            return index >= 0 && index < actorPage.content.length - 1;
+          })(),
         )}
       />
 
