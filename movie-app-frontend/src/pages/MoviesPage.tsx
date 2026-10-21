@@ -8,6 +8,7 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { movieService } from "../services/movieService";
 import { getApiErrorMessage } from "../services/api";
@@ -23,6 +24,7 @@ export default function MoviesPage() {
   const [availableActors, setAvailableActors] = useState<Actor[]>([]);
   const [selectedActorIds, setSelectedActorIds] = useState<number[]>([]);
   const [actorSearchKeyword, setActorSearchKeyword] = useState("");
+  const [actorFilterOpen, setActorFilterOpen] = useState(false);
 
   // State điều kiện lọc khớp với Backend (title, country, genre, releaseYear)
   const [filters, setFilters] = useState({
@@ -81,8 +83,10 @@ export default function MoviesPage() {
   const fetchMovies = async (pageIndex: number = 0) => {
     try {
       setLoading(true);
-      // Size đang để 12 theo đúng cấu hình bên Controller của Backend (defaultValue = "12")
-      const params: Record<string, any> = { page: pageIndex, size: 12 };
+      // Khi lọc diễn viên, lấy tập kết quả rộng hơn rồi lọc theo quan hệ movie.actors ở frontend;
+      // API hiện tại có thể chưa hỗ trợ actorId/actorIds. Sau đó phân trang lại theo 12 phim/trang.
+      const actorFiltering = selectedActorIds.length > 0;
+      const params: Record<string, any> = { page: actorFiltering ? 0 : pageIndex, size: actorFiltering ? 1000 : 12 };
 
       if (filters.title.trim()) params.title = filters.title.trim();
       if (filters.genre.trim()) params.genre = filters.genre.trim();
@@ -90,30 +94,33 @@ export default function MoviesPage() {
       if (filters.releaseYear.trim())
         params.releaseYear = filters.releaseYear.trim();
       if (filters.status) params.status = filters.status;
-      // Backend nhận danh sách ID diễn viên được chọn để lọc phim.
-      if (selectedActorIds.length === 1) params.actorId = selectedActorIds[0];
-      else if (selectedActorIds.length > 1) params.actorIds = selectedActorIds.join(",");
-
       const data = await movieService.getAll(params);
+      const allMovies: Movie[] = Array.isArray(data) ? data : data.content || [];
+      const matchingMovies = actorFiltering
+        ? allMovies.filter((movie) =>
+            selectedActorIds.every((actorId) => movie.actors?.some((actor) => actor.id === actorId)),
+          )
+        : allMovies;
 
-      // Fallback nếu BE trả về List thay vì Page
-      if (Array.isArray(data)) {
-        setMoviePage({
-          content: data,
-          pageNo: 0,
-          pageSize: data.length,
-          totalElements: data.length,
-          totalPages: 1,
-          last: true,
-        });
+      if (actorFiltering) {
+        const pageSize = 12;
+        const totalPages = Math.max(1, Math.ceil(matchingMovies.length / pageSize));
+        const safePage = Math.max(0, Math.min(pageIndex, totalPages - 1));
+        const content = matchingMovies.slice(safePage * pageSize, (safePage + 1) * pageSize);
+        setMoviePage({ content, pageNo: safePage, pageSize, totalElements: matchingMovies.length, totalPages, last: safePage >= totalPages - 1 });
+        setCurrentPage(safePage);
+        setPageInput(String(safePage + 1));
+      } else if (Array.isArray(data)) {
+        setMoviePage({ content: data, pageNo: 0, pageSize: data.length, totalElements: data.length, totalPages: 1, last: true });
+        setCurrentPage(0);
+        setPageInput("1");
       } else {
         setMoviePage(data);
+        const totalPages = Math.max(1, data.totalPages);
+        const safePage = Math.max(0, Math.min(pageIndex, totalPages - 1));
+        setCurrentPage(safePage);
+        setPageInput(String(safePage + 1));
       }
-
-      const totalPages = Array.isArray(data) ? 1 : Math.max(1, data.totalPages);
-      const safePage = Math.max(0, Math.min(pageIndex, totalPages - 1));
-      setCurrentPage(safePage);
-      setPageInput(String(safePage + 1));
     } catch (err) {
       console.error("Lỗi tải phim", err);
       setPopup({
@@ -237,54 +244,55 @@ export default function MoviesPage() {
         </select>
       </div>
 
-      {/* Bộ lọc diễn viên: tìm kiếm và chọn nhiều diễn viên như form thêm phim */}
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-          <label className="font-medium text-sm text-gray-700 dark:text-gray-200">Lọc theo diễn viên</label>
-          {selectedActorIds.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setSelectedActorIds([])}
-              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline self-start sm:self-auto"
-            >
-              Bỏ chọn ({selectedActorIds.length})
-            </button>
-          )}
-        </div>
-        <div className="relative mb-3">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
-          <input
-            type="text"
-            value={actorSearchKeyword}
-            onChange={(e) => setActorSearchKeyword(e.target.value)}
-            placeholder="Gõ tên diễn viên để tìm nhanh..."
-            className={`${inputClass} pl-9 w-full`}
-          />
-        </div>
-        <div className="max-h-40 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          {availableActors.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 py-2">Không có dữ liệu diễn viên.</p>
-          ) : filteredActors.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 py-2">Không tìm thấy diễn viên phù hợp.</p>
-          ) : filteredActors.map((actor) => (
-            <label key={actor.id} className="flex items-center gap-3 p-2 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer min-w-0">
-              <input
-                type="checkbox"
-                checked={selectedActorIds.includes(actor.id)}
-                onChange={() => setSelectedActorIds((current) => current.includes(actor.id) ? current.filter((id) => id !== actor.id) : [...current, actor.id])}
-                className="w-4 h-4 shrink-0 text-indigo-600 rounded focus:ring-indigo-500"
-              />
-              {actor.avatarUrl ? (
-                <img src={actor.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-200 shrink-0">
-                  {actor.fullName.charAt(0)}
-                </div>
+      {/* Bộ lọc diễn viên thu gọn để tiết kiệm không gian */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setActorFilterOpen((open) => !open)}
+          aria-expanded={actorFilterOpen}
+          className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+        >
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="font-medium text-sm text-gray-800 dark:text-gray-100">Lọc theo diễn viên</span>
+            {selectedActorIds.length > 0 ? (
+              <span className="text-xs rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 px-2 py-0.5">
+                Đã chọn {selectedActorIds.length}
+              </span>
+            ) : (
+              <span className="text-xs text-gray-500 dark:text-gray-400">Tùy chọn</span>
+            )}
+          </span>
+          <ChevronDown className={`w-5 h-5 shrink-0 text-gray-500 transition-transform ${actorFilterOpen ? "rotate-180" : ""}`} />
+        </button>
+        {actorFilterOpen && (
+          <div className="p-4 pt-0 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 my-3">
+              <p className="text-xs text-gray-500 dark:text-gray-400">Chọn một hoặc nhiều diễn viên để lọc phim có đủ các diễn viên đã chọn.</p>
+              {selectedActorIds.length > 0 && (
+                <button type="button" onClick={() => setSelectedActorIds([])} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline self-start sm:self-auto">
+                  Bỏ chọn tất cả
+                </button>
               )}
-              <span className="text-sm text-gray-700 dark:text-gray-200 truncate">{actor.fullName}</span>
-            </label>
-          ))}
-        </div>
+            </div>
+            <div className="relative mb-3">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
+              <input type="text" value={actorSearchKeyword} onChange={(e) => setActorSearchKeyword(e.target.value)} placeholder="Tìm diễn viên theo tên..." className={`${inputClass} pl-9 w-full`} />
+            </div>
+            <div className="max-h-48 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {availableActors.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400 py-2">Không có dữ liệu diễn viên.</p>
+              ) : filteredActors.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400 py-2">Không tìm thấy diễn viên phù hợp.</p>
+              ) : filteredActors.map((actor) => (
+                <label key={actor.id} className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer min-w-0 transition-colors ${selectedActorIds.includes(actor.id) ? "border-indigo-300 bg-indigo-50 dark:border-indigo-700 dark:bg-indigo-900/30" : "border-transparent hover:border-gray-200 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
+                  <input type="checkbox" checked={selectedActorIds.includes(actor.id)} onChange={() => setSelectedActorIds((current) => current.includes(actor.id) ? current.filter((id) => id !== actor.id) : [...current, actor.id])} className="w-4 h-4 shrink-0 accent-indigo-600" />
+                  {actor.avatarUrl ? <img src={actor.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" /> : <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-200 shrink-0">{actor.fullName.charAt(0)}</div>}
+                  <span className="text-sm text-gray-700 dark:text-gray-200 truncate">{actor.fullName}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {loading ? (
