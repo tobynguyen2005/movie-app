@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Plus, Tags, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Plus, Tags, Edit, Trash2 } from 'lucide-react';
 import { genreService } from '../services/genreService';
 import { getApiErrorMessage } from '../services/api';
 import type { Genre } from '../types';
@@ -8,11 +8,7 @@ import ActionPopup, { type PopupType } from '../components/ActionPopup';
 
 export default function GenresPage() {
   const [genres, setGenres] = useState<Genre[]>([]);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [pageInput, setPageInput] = useState("1");
-  const pageSize = 12;
-  const totalPages = Math.max(1, Math.ceil(genres.length / pageSize));
-  const visibleGenres = genres.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+  const visibleGenres = genres.slice(0, 40);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGenre, setEditingGenre] = useState<Genre | null>(null);
@@ -32,8 +28,6 @@ export default function GenresPage() {
     try { 
       setLoading(true); 
       setGenres(await genreService.getAll());
-      setCurrentPage(0);
-      setPageInput("1"); 
     } catch (err) { 
       console.error(err);
       setPopup({
@@ -57,11 +51,7 @@ export default function GenresPage() {
         try {
           await genreService.delete(id);
           const nextGenres = genres.filter(g => g.id !== id);
-          const nextTotalPages = Math.max(1, Math.ceil(nextGenres.length / pageSize));
-          const nextPage = Math.min(currentPage, nextTotalPages - 1);
           setGenres(nextGenres);
-          setCurrentPage(nextPage);
-          setPageInput(String(nextPage + 1));
           setPopup(null);
         } catch (err) {
           setPopup({
@@ -116,45 +106,6 @@ export default function GenresPage() {
         </div>
       )}
 
-      {!loading && genres.length > 0 && (
-        <div className="flex flex-wrap justify-center items-center gap-3 mt-8">
-          <button
-            disabled={currentPage === 0}
-            onClick={() => { const page = Math.max(0, currentPage - 1); setCurrentPage(page); setPageInput(String(page + 1)); }}
-            className="p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 disabled:opacity-50"
-            aria-label="Trang trước"
-          >
-            <ChevronLeft className="w-5 h-5 dark:text-white" />
-          </button>
-          <span className="text-gray-700 dark:text-gray-300 font-medium">Trang</span>
-          <input
-            aria-label="Đi đến trang thể loại"
-            type="number"
-            min={1}
-            max={totalPages}
-            value={pageInput}
-            onChange={(e) => setPageInput(e.target.value)}
-            onBlur={() => {
-              const requested = Number(pageInput);
-              const page = Math.max(1, Math.min(Number.isFinite(requested) && pageInput.trim() !== '' ? Math.trunc(requested) : 1, totalPages));
-              setPageInput(String(page));
-              setCurrentPage(page - 1);
-            }}
-            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-            className="border border-gray-300 dark:border-gray-600 rounded-lg p-2 w-20 text-center outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
-          />
-          <span className="text-gray-700 dark:text-gray-300 font-medium">/ {totalPages}</span>
-          <button
-            disabled={currentPage >= totalPages - 1}
-            onClick={() => { const page = Math.min(totalPages - 1, currentPage + 1); setCurrentPage(page); setPageInput(String(page + 1)); }}
-            className="p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 disabled:opacity-50"
-            aria-label="Trang tiếp"
-          >
-            <ChevronRight className="w-5 h-5 dark:text-white" />
-          </button>
-        </div>
-      )}
-      
       <GenreModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSuccess={fetchGenres} initialData={editingGenre} />
 
       <ActionPopup

@@ -29,6 +29,7 @@ export default function MoviesPage() {
     status: "" as MovieStatus | "",
   });
   const [currentPage, setCurrentPage] = useState(0);
+  const [pageInput, setPageInput] = useState("1");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
@@ -84,7 +85,10 @@ export default function MoviesPage() {
         setMoviePage(data);
       }
 
-      setCurrentPage(pageIndex);
+      const totalPages = Array.isArray(data) ? 1 : Math.max(1, data.totalPages);
+      const safePage = Math.max(0, Math.min(pageIndex, totalPages - 1));
+      setCurrentPage(safePage);
+      setPageInput(String(safePage + 1));
     } catch (err) {
       console.error("Lỗi tải phim", err);
       setPopup({
@@ -297,8 +301,35 @@ export default function MoviesPage() {
               >
                 <ChevronLeft className="w-5 h-5 dark:text-white" />
               </button>
+              <span className="text-gray-700 dark:text-gray-300 font-medium">Trang</span>
+              <input
+                aria-label="Đi đến trang phim"
+                type="number"
+                min={1}
+                max={moviePage.totalPages}
+                value={pageInput}
+                onChange={(e) => setPageInput(e.target.value)}
+                onBlur={() => {
+                  const requested = Number(pageInput);
+                  const page = Math.max(
+                    1,
+                    Math.min(
+                      Number.isFinite(requested) && pageInput.trim() !== ""
+                        ? Math.trunc(requested)
+                        : 1,
+                      moviePage.totalPages,
+                    ),
+                  );
+                  setPageInput(String(page));
+                  if (page - 1 !== currentPage) fetchMovies(page - 1);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.currentTarget.blur();
+                }}
+                className="border border-gray-300 dark:border-gray-600 rounded-lg p-2 w-20 text-center outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+              />
               <span className="text-gray-700 dark:text-gray-300 font-medium">
-                Trang {currentPage + 1} / {moviePage.totalPages}
+                / {moviePage.totalPages}
               </span>
               <button
                 disabled={moviePage.last}
