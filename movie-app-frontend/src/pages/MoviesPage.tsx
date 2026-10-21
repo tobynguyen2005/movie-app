@@ -109,7 +109,7 @@ export default function MoviesPage() {
   ) => {
     setFilters({
       ...filters,
-      [e.target.name]: e.target.value.trim(),
+      [e.target.name]: e.target.value,
     });
   };
 
