@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 import { movieService } from "../services/movieService";
 import { getApiErrorMessage } from "../services/api";
-import type { Movie, MovieStatus, PageResponse } from "../types";
+import type { Movie, MovieStatus, PageResponse, Actor } from "../types";
+import { actorService } from "../services/actorService";
 import MovieModal from "../components/MovieModal";
 import MovieDetailModal from "../components/MovieDetailModal";
 import ActionPopup, { type PopupType } from "../components/ActionPopup";
@@ -19,6 +20,9 @@ import ActionPopup, { type PopupType } from "../components/ActionPopup";
 export default function MoviesPage() {
   const [moviePage, setMoviePage] = useState<PageResponse<Movie> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [availableActors, setAvailableActors] = useState<Actor[]>([]);
+  const [selectedActorIds, setSelectedActorIds] = useState<number[]>([]);
+  const [actorSearchKeyword, setActorSearchKeyword] = useState("");
 
   // State điều kiện lọc khớp với Backend (title, country, genre, releaseYear)
   const [filters, setFilters] = useState({
@@ -47,6 +51,24 @@ export default function MoviesPage() {
   };
   const [popup, setPopup] = useState<PopupState | null>(null);
 
+  // Tải danh sách diễn viên giống phần chọn diễn viên khi thêm/sửa phim.
+  useEffect(() => {
+    const loadActors = async () => {
+      try {
+        const result = await actorService.getAll({ size: 1000 });
+        setAvailableActors(Array.isArray(result) ? result : result.content || []);
+      } catch (error) {
+        console.error("Không thể tải danh sách diễn viên để lọc phim", error);
+      }
+    };
+    loadActors();
+  }, []);
+
+  const normalizedActorSearch = actorSearchKeyword.trim().toLowerCase();
+  const filteredActors = availableActors.filter((actor) =>
+    actor.fullName.toLowerCase().includes(normalizedActorSearch),
+  );
+
   // Live Search với Debounce 500ms (Đợi ngừng gõ nửa giây mới gọi API)
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -54,7 +76,7 @@ export default function MoviesPage() {
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [filters]);
+  }, [filters, selectedActorIds]);
 
   const fetchMovies = async (pageIndex: number = 0) => {
     try {
@@ -68,6 +90,9 @@ export default function MoviesPage() {
       if (filters.releaseYear.trim())
         params.releaseYear = filters.releaseYear.trim();
       if (filters.status) params.status = filters.status;
+      // Backend nhận danh sách ID diễn viên được chọn để lọc phim.
+      if (selectedActorIds.length === 1) params.actorId = selectedActorIds[0];
+      else if (selectedActorIds.length > 1) params.actorIds = selectedActorIds.join(",");
 
       const data = await movieService.getAll(params);
 
@@ -210,6 +235,56 @@ export default function MoviesPage() {
           <option value="COMPLETED">Đã hoàn thành</option>
           <option value="DROPPED">Đã huỷ</option>
         </select>
+      </div>
+
+      {/* Bộ lọc diễn viên: tìm kiếm và chọn nhiều diễn viên như form thêm phim */}
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+          <label className="font-medium text-sm text-gray-700 dark:text-gray-200">Lọc theo diễn viên</label>
+          {selectedActorIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedActorIds([])}
+              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline self-start sm:self-auto"
+            >
+              Bỏ chọn ({selectedActorIds.length})
+            </button>
+          )}
+        </div>
+        <div className="relative mb-3">
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
+          <input
+            type="text"
+            value={actorSearchKeyword}
+            onChange={(e) => setActorSearchKeyword(e.target.value)}
+            placeholder="Gõ tên diễn viên để tìm nhanh..."
+            className={`${inputClass} pl-9 w-full`}
+          />
+        </div>
+        <div className="max-h-40 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {availableActors.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 py-2">Không có dữ liệu diễn viên.</p>
+          ) : filteredActors.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 py-2">Không tìm thấy diễn viên phù hợp.</p>
+          ) : filteredActors.map((actor) => (
+            <label key={actor.id} className="flex items-center gap-3 p-2 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer min-w-0">
+              <input
+                type="checkbox"
+                checked={selectedActorIds.includes(actor.id)}
+                onChange={() => setSelectedActorIds((current) => current.includes(actor.id) ? current.filter((id) => id !== actor.id) : [...current, actor.id])}
+                className="w-4 h-4 shrink-0 text-indigo-600 rounded focus:ring-indigo-500"
+              />
+              {actor.avatarUrl ? (
+                <img src={actor.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-200 shrink-0">
+                  {actor.fullName.charAt(0)}
+                </div>
+              )}
+              <span className="text-sm text-gray-700 dark:text-gray-200 truncate">{actor.fullName}</span>
+            </label>
+          ))}
+        </div>
       </div>
 
       {loading ? (
