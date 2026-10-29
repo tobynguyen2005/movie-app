@@ -19,11 +19,12 @@ public class MovieSpecification {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            if (Long.class != query.getResultType()) {
-                root.fetch("genres", jakarta.persistence.criteria.JoinType.LEFT);
-                root.fetch("actors", jakarta.persistence.criteria.JoinType.LEFT);
-                query.distinct(true);
-            }
+            // Relationship joins can produce several SQL rows for the same movie.
+            // Keep both the page query and its count query distinct. Do not fetch
+            // collection associations here: collection fetch joins combined with
+            // pagination can cause Hibernate to paginate in memory or return an
+            // unstable page. Associations are mapped inside the service transaction.
+            query.distinct(true);
 
             if (title != null && !title.isBlank()) {
                 predicates.add(cb.like(cb.lower(root.get("title")), "%" + title.toLowerCase() + "%"));

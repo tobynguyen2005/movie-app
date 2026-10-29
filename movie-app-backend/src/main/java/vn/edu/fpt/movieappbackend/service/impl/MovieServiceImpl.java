@@ -39,6 +39,7 @@ public class MovieServiceImpl implements IMovieService {
     private final GenreServiceImpl genreService;
 
     @Override
+    @Transactional(readOnly = true)
     public PageResponse<MovieResponse> getMovies(
             String title,
             Integer releaseYear,
@@ -65,6 +66,7 @@ public class MovieServiceImpl implements IMovieService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MovieResponse getMovieById(Long id) {
         Movie movie = movieRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Movie với ID: " + id));
