@@ -128,6 +128,12 @@ public class MovieServiceImpl implements IMovieService {
     private void setGenresForMovie(Movie movie, Set<Long> genreIds) {
         if (genreIds != null && !genreIds.isEmpty()) {
             List<Genre> genres = genreRepository.findAllById(genreIds);
+            if (genres.size() != genreIds.size()) {
+                Set<Long> foundIds = genres.stream().map(Genre::getId).collect(Collectors.toSet());
+                Set<Long> missingIds = new HashSet<>(genreIds);
+                missingIds.removeAll(foundIds);
+                throw new ResourceNotFoundException("Không tìm thấy thể loại với ID: " + missingIds);
+            }
             movie.setGenres(new HashSet<>(genres));
         } else {
             movie.setGenres(new HashSet<>());
@@ -137,6 +143,12 @@ public class MovieServiceImpl implements IMovieService {
     private void setActorsForMovie(Movie movie, Set<Long> actorIds) {
         if (actorIds != null && !actorIds.isEmpty()) {
             List<Actor> actors = actorRepository.findAllById(actorIds);
+            if (actors.size() != actorIds.size()) {
+                Set<Long> foundIds = actors.stream().map(Actor::getId).collect(Collectors.toSet());
+                Set<Long> missingIds = new HashSet<>(actorIds);
+                missingIds.removeAll(foundIds);
+                throw new ResourceNotFoundException("Không tìm thấy diễn viên với ID: " + missingIds);
+            }
             movie.setActors(new HashSet<>(actors));
         } else {
             movie.setActors(new HashSet<>());

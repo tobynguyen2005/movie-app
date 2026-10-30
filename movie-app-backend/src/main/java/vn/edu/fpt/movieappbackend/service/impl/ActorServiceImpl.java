@@ -13,7 +13,9 @@ import vn.edu.fpt.movieappbackend.dto.response.PageResponse;
 import vn.edu.fpt.movieappbackend.entity.Actor;
 import vn.edu.fpt.movieappbackend.entity.enums.ActorGender;
 import vn.edu.fpt.movieappbackend.exception.ResourceNotFoundException;
+import vn.edu.fpt.movieappbackend.exception.ConflictException;
 import vn.edu.fpt.movieappbackend.repository.ActorRepository;
+import vn.edu.fpt.movieappbackend.repository.MovieRepository;
 import vn.edu.fpt.movieappbackend.service.IActorService;
 import vn.edu.fpt.movieappbackend.specification.ActorSpecification;
 
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 public class ActorServiceImpl implements IActorService {
 
     private final ActorRepository actorRepository;
+    private final MovieRepository movieRepository;
 
     @Override
     public PageResponse<ActorResponse> getActors(String fullName, ActorGender gender, String country, Integer birthYear, int page, int size) {
@@ -82,10 +85,15 @@ public class ActorServiceImpl implements IActorService {
     @Override
     @Transactional
     public void deleteActor(Long id) {
-        if (!actorRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Không tìm thấy Actor với ID: " + id);
+        Actor actor = actorRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy diễn viên với ID: " + id));
+
+        if (movieRepository.existsByActors_Id(id)) {
+            throw new ConflictException("Không thể xóa diễn viên \"" + actor.getFullName()
+                    + "\" vì đang tham gia một hoặc nhiều phim. Hãy gỡ diễn viên khỏi các phim trước.");
         }
-        actorRepository.deleteById(id);
+
+        actorRepository.delete(actor);
     }
 
     // Helper map từ Entity sang Response (Record)

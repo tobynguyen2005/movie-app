@@ -10,7 +10,7 @@ import {
   ChevronRight,
   ChevronDown,
   SlidersHorizontal,
-  X,
+  RotateCcw,
 } from "lucide-react";
 import { movieService } from "../services/movieService";
 import { getApiErrorMessage } from "../services/api";
@@ -88,6 +88,23 @@ export default function MoviesPage() {
   const filteredGenres = availableGenres.filter((genre) =>
     genre.name.toLowerCase().includes(normalizedGenreSearch),
   );
+
+  const hasActiveFilters = Boolean(
+    filters.title.trim() ||
+    filters.country.trim() ||
+    filters.releaseYear.trim() ||
+    filters.status ||
+    selectedGenreIds.length > 0 ||
+    selectedActorIds.length > 0,
+  );
+
+  const resetFilters = () => {
+    setFilters({ title: "", country: "", releaseYear: "", status: "" });
+    setSelectedGenreIds([]);
+    setSelectedActorIds([]);
+    setGenreSearchKeyword("");
+    setActorSearchKeyword("");
+  };
 
   // Live Search với Debounce 500ms (Đợi ngừng gõ nửa giây mới gọi API)
   useEffect(() => {
@@ -252,23 +269,35 @@ export default function MoviesPage() {
 
       {/* Bộ lọc nâng cao */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
-        <button
-          type="button"
-          onClick={() => setAdvancedFiltersOpen((open) => !open)}
-          aria-expanded={advancedFiltersOpen}
-          className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-        >
-          <span className="flex items-center gap-2 min-w-0">
-            <SlidersHorizontal className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            <span className="font-medium text-sm text-gray-800 dark:text-gray-100">Bộ lọc nâng cao</span>
-            {(filters.releaseYear || selectedGenreIds.length > 0 || selectedActorIds.length > 0) && (
-              <span className="text-xs rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 px-2 py-0.5">
-                {[filters.releaseYear ? 1 : 0, selectedGenreIds.length > 0 ? 1 : 0, selectedActorIds.length > 0 ? 1 : 0].reduce((a, b) => a + b, 0)} điều kiện
-              </span>
-            )}
-          </span>
-          <ChevronDown className={`w-5 h-5 shrink-0 text-gray-500 transition-transform ${advancedFiltersOpen ? "rotate-180" : ""}`} />
-        </button>
+        <div className="flex items-center gap-2 p-3 sm:p-4">
+          <button
+            type="button"
+            onClick={() => setAdvancedFiltersOpen((open) => !open)}
+            aria-expanded={advancedFiltersOpen}
+            className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-lg px-1 py-1 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+          >
+            <span className="flex items-center gap-2 min-w-0">
+              <SlidersHorizontal className="w-4 h-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
+              <span className="font-medium text-sm text-gray-800 dark:text-gray-100">Bộ lọc nâng cao</span>
+              {(filters.releaseYear || selectedGenreIds.length > 0 || selectedActorIds.length > 0) && (
+                <span className="text-xs rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 px-2 py-0.5 whitespace-nowrap">
+                  {[filters.releaseYear ? 1 : 0, selectedGenreIds.length > 0 ? 1 : 0, selectedActorIds.length > 0 ? 1 : 0].reduce((a, b) => a + b, 0)} điều kiện
+                </span>
+              )}
+            </span>
+            <ChevronDown className={`w-5 h-5 shrink-0 text-gray-500 transition-transform ${advancedFiltersOpen ? "rotate-180" : ""}`} />
+          </button>
+          <button
+            type="button"
+            onClick={resetFilters}
+            disabled={!hasActiveFilters}
+            title="Đặt lại tất cả bộ lọc"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-300 disabled:hover:bg-transparent disabled:hover:text-gray-600 dark:border-gray-600 dark:text-gray-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300 dark:disabled:hover:border-gray-600 dark:disabled:hover:bg-transparent dark:disabled:hover:text-gray-300"
+          >
+            <RotateCcw className="h-4 w-4" />
+            <span>Đặt lại</span>
+          </button>
+        </div>
         {advancedFiltersOpen && (
           <div className="p-4 pt-3 border-t border-gray-100 dark:border-gray-700 space-y-5">
             <div className="max-w-xs">
@@ -335,13 +364,6 @@ export default function MoviesPage() {
               </div>
             </section>
 
-            {(filters.releaseYear || selectedGenreIds.length > 0 || selectedActorIds.length > 0) && (
-              <div className="flex justify-end border-t border-gray-100 dark:border-gray-700 pt-3">
-                <button type="button" onClick={() => { setFilters((current) => ({ ...current, releaseYear: "" })); setSelectedGenreIds([]); setSelectedActorIds([]); }} className="inline-flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">
-                  <X className="w-4 h-4" /> Xóa bộ lọc nâng cao
-                </button>
-              </div>
-            )}
           </div>
         )}
       </div>

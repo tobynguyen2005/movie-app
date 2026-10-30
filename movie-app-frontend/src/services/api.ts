@@ -10,38 +10,111 @@ const api = axios.create({
 });
 
 /**
- * Extract a readable error message from an Axios/API error.
+ * Extract a useful, user-facing message from API and network errors.
+ * Supports the backend's { message }, { errors }, and Spring ProblemDetail shapes.
  */
 export function getApiErrorMessage(error: unknown, fallback: string): string {
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data as Record<string, unknown> | undefined;
+    const response = error.response;
+    const status = response?.status;
+    const data = response?.data;
 
-    if (data) {
-      const errors = data.errors;
+    if (typeof data === "string" && data.trim()) {
+      return data.trim();
+    }
+
+    if (data && typeof data === "object") {
+      const payload = data as Record<string, unknown>;
+      const errors = payload.errors;
+
+      if (Array.isArray(errors)) {
+        const messages = errors
+          .map((item) => {
+            if (typeof item === "string") return item;
+            if (item && typeof item === "object") {
+              const entry = item as Record<string, unknown>;
+              return String(entry.defaultMessage ?? entry.message ?? "");
+            }
+            return "";
+          })
+          .filter(Boolean);
+        if (messages.length > 0) return messages.join("\n");
+      }
 
       if (errors && typeof errors === "object") {
-        return Object.values(errors as Record<string, unknown>)
-          .map(String)
-          .join("\n");
+        const fieldLabels: Record<string, string> = {
+          title: "Tiêu đề phim",
+          releaseYear: "Năm phát hành",
+          totalEpisodes: "Số tập",
+          fullName: "Họ và tên",
+          gender: "Giới tính",
+          name: "Tên thể loại",
+          dob: "Ngày sinh",
+          request: "Thông tin",
+        };
+        const messages = Object.entries(errors as Record<string, unknown>)
+          .map(([field, message]) => {
+            const readableMessage = Array.isArray(message)
+              ? message.map(String).join(", ")
+              : String(message);
+            return readableMessage.trim()
+              ? `${fieldLabels[field] ?? field}: ${readableMessage.trim()}`
+              : "";
+          })
+          .filter(Boolean);
+        if (messages.length > 0) return messages.join("\n");
       }
 
-      if (typeof data.message === "string" && data.message.trim()) {
-        return data.message.trim();
+      const genericFrameworkMessages = new Set([
+        "internal server error",
+        "bad request",
+        "conflict",
+        "not found",
+        "forbidden",
+        "unauthorized",
+      ]);
+      for (const key of ["message", "detail", "description"]) {
+        const value = payload[key];
+        if (
+          typeof value === "string" &&
+          value.trim() &&
+          !genericFrameworkMessages.has(value.trim().toLowerCase())
+        ) {
+          return value.trim();
+        }
       }
 
-      if (typeof data.error === "string" && typeof data.path === "string") {
-        const status =
-          typeof data.status === "number" ? ` (${data.status})` : "";
+      // Do not display generic framework labels such as "Internal Server Error"
+      // when a more helpful HTTP status explanation is available below.
+    }
 
-        return `${data.error}${status}\nAPI: ${data.path}`;
+    if (status !== undefined) {
+      const statusMessages: Record<number, string> = {
+        400: "Dữ liệu gửi lên không hợp lệ. Vui lòng kiểm tra lại thông tin.",
+        401: "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.",
+        403: "Bạn không có quyền thực hiện thao tác này.",
+        404: "Không tìm thấy dữ liệu cần thao tác.",
+        409: "Dữ liệu bị trùng hoặc đang được dữ liệu khác sử dụng.",
+        413: "Dữ liệu gửi lên quá lớn.",
+        415: "Định dạng dữ liệu không được hỗ trợ.",
+        422: "Dữ liệu không đáp ứng các điều kiện xử lý.",
+        429: "Bạn thao tác quá nhanh. Vui lòng thử lại sau.",
+      };
+      if (statusMessages[status]) return `${statusMessages[status]} (HTTP ${status})`;
+      if (status >= 500) {
+        return `Máy chủ gặp lỗi khi xử lý yêu cầu. Vui lòng thử lại sau. (HTTP ${status})`;
       }
     }
 
-    if (error.message) {
+    if (error.message && error.message !== "Network Error") {
       return error.message;
+    }
+    if (error.message === "Network Error") {
+      return "Không thể kết nối tới máy chủ. Vui lòng kiểm tra mạng hoặc trạng thái backend.";
     }
   }
 
+  if (error instanceof Error && error.message.trim()) return error.message;
   return fallback;
 }
 
