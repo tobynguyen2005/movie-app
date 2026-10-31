@@ -137,12 +137,12 @@ export default function TierListPage() {
     setDraggedEntryId(null);
   };
 
-  const handleDropOnTier = (event: DragEvent<HTMLDivElement>, tier: MovieTier) => {
+  const handleDropOnTier = (event: DragEvent<HTMLElement>, tier: MovieTier) => {
     event.preventDefault();
     moveEntry(tier);
   };
 
-  const handleDropOnMovie = (event: DragEvent<HTMLDivElement>, tier: MovieTier, entryId: number) => {
+  const handleDropOnMovie = (event: DragEvent<HTMLElement>, tier: MovieTier, entryId: number) => {
     event.preventDefault();
     event.stopPropagation();
     if (draggedEntryId !== entryId) moveEntry(tier, entryId);
