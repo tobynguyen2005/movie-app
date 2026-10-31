@@ -15,6 +15,7 @@ import vn.edu.fpt.movieappbackend.exception.ResourceNotFoundException;
 import vn.edu.fpt.movieappbackend.repository.ActorRepository;
 import vn.edu.fpt.movieappbackend.repository.GenreRepository;
 import vn.edu.fpt.movieappbackend.repository.MovieRepository;
+import vn.edu.fpt.movieappbackend.repository.MovieTierEntryRepository;
 import vn.edu.fpt.movieappbackend.service.IMovieService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 public class MovieServiceImpl implements IMovieService {
 
     private final MovieRepository movieRepository;
+    private final MovieTierEntryRepository tierEntryRepository;
     private final ActorRepository actorRepository;
     private final GenreRepository genreRepository;
     private final ActorServiceImpl actorService;
@@ -108,6 +110,9 @@ public class MovieServiceImpl implements IMovieService {
         if (request.status() != null) {
             movie.setStatus(request.status());
         }
+        if (movie.getStatus() != MovieStatus.COMPLETED) {
+            tierEntryRepository.findByMovie_Id(id).ifPresent(tierEntryRepository::delete);
+        }
 
         setActorsForMovie(movie, request.actorIds());
         setGenresForMovie(movie, request.genreIds());
@@ -122,6 +127,7 @@ public class MovieServiceImpl implements IMovieService {
         if (!movieRepository.existsById(id)) {
             throw new ResourceNotFoundException("Không tìm thấy Movie với ID: " + id);
         }
+        tierEntryRepository.findByMovie_Id(id).ifPresent(tierEntryRepository::delete);
         movieRepository.deleteById(id);
     }
 

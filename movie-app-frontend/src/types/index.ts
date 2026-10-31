@@ -36,3 +36,24 @@ export interface PageResponse<T> {
   totalPages: number;
   last: boolean;
 }
+
+export type MovieTier = 'S' | 'A' | 'B' | 'C' | 'D' | 'E';
+
+export interface MovieTierEntry {
+  id: number;
+  movieId: number;
+  title: string;
+  releaseYear: number | null;
+  posterUrl: string | null;
+  country: string | null;
+  tier: MovieTier;
+  position: number;
+}
+
+export interface TierListMovieOption {
+  id: number;
+  title: string;
+  releaseYear: number | null;
+  posterUrl: string | null;
+  country: string | null;
+}

@@ -73,3 +73,8 @@ export default defineConfig([
 ])
 
 ```
+
+
+## Movie Tier List
+
+The `/tier-list` page provides a shared admin-managed ranking board with tiers S through E. It only offers movies with status `COMPLETED`, supports drag-and-drop between tiers and within a tier, and persists positions through the backend `/api/tier-list` endpoints. Removing a movie from the board does not delete it from the movie library.
