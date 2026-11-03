@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { Film, Users, Sun, Moon, Tags, Trophy } from 'lucide-react';
+import { Film, Users, Sun, Moon, Tags, Sparkles } from 'lucide-react';
 import MoviesPage from './pages/MoviesPage';
 import ActorsPage from './pages/ActorsPage';
 import GenresPage from './pages/GenresPage';
@@ -30,8 +30,8 @@ function App() {
             <Link to="/genres" className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium">
             <Tags className="w-5 h-5" /> Thể loại
           </Link>
-            <Link to="/tier-list" className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium">
-              <Trophy className="w-5 h-5" /> Tier List
+            <Link to="/recommend" className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium">
+              <Sparkles className="w-5 h-5" /> Recommend
             </Link>
           </nav>
 
@@ -58,7 +58,8 @@ function App() {
             <Route path="/movies" element={<MoviesPage />} />
             <Route path="/actors" element={<ActorsPage />} />
             <Route path="/genres" element={<GenresPage />} />
-            <Route path="/tier-list" element={<TierListPage />} />
+            <Route path="/recommend" element={<TierListPage />} />
+            <Route path="/tier-list" element={<Navigate to="/recommend" replace />} />
             <Route path="/" element={<Navigate to="/movies" replace />} />
           </Routes>
         </main>

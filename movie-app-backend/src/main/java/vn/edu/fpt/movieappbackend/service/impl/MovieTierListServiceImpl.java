@@ -17,7 +17,6 @@ import vn.edu.fpt.movieappbackend.repository.MovieRepository;
 import vn.edu.fpt.movieappbackend.repository.MovieTierEntryRepository;
 import vn.edu.fpt.movieappbackend.service.IMovieTierListService;
 
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,13 +34,8 @@ public class MovieTierListServiceImpl implements IMovieTierListService {
     @Override
     @Transactional(readOnly = true)
     public List<MovieTierEntryResponse> getEntries() {
-        return tierEntryRepository.findAll().stream()
-                .sorted(Comparator
-                        .comparingInt((MovieTierEntry entry) -> entry.getTier().ordinal())
-                        .thenComparing(MovieTierEntry::getSortOrder)
-                        .thenComparing(MovieTierEntry::getId))
-                .map(this::toResponse)
-                .toList();
+        return tierEntryRepository.findAllByTierOrderBySortOrderAscIdAsc(MovieTier.S)
+                .stream().map(this::toResponse).toList();
     }
 
     @Override
@@ -53,7 +47,7 @@ public class MovieTierListServiceImpl implements IMovieTierListService {
                 : movieRepository.findByStatusAndTitleContainingIgnoreCaseOrderByTitleAsc(
                         MovieStatus.COMPLETED, normalizedKeyword);
 
-        Set<Long> assignedMovieIds = tierEntryRepository.findAll().stream()
+        Set<Long> assignedMovieIds = tierEntryRepository.findAllByTierOrderBySortOrderAscIdAsc(MovieTier.S).stream()
                 .map(entry -> entry.getMovie().getId())
                 .collect(Collectors.toSet());
 
@@ -77,28 +71,24 @@ public class MovieTierListServiceImpl implements IMovieTierListService {
                     "Chỉ có thể thêm phim đã hoàn thành (Đã xem) vào Tier List. Phim \""
                             + movie.getTitle() + "\" hiện có trạng thái " + movie.getStatus() + ".");
         }
-        if (tierEntryRepository.existsByMovie_Id(movie.getId())) {
-            throw new ConflictException("Phim \"" + movie.getTitle() + "\" đã có trong Tier List.");
+        MovieTierEntry existingEntry = tierEntryRepository.findByMovie_Id(movie.getId()).orElse(null);
+        if (existingEntry != null && existingEntry.getTier() == MovieTier.S) {
+            throw new ConflictException("Phim \"" + movie.getTitle() + "\" đã có trong Masterpiece.");
         }
 
-        int nextPosition = tierEntryRepository.findAll().stream()
-                .filter(entry -> entry.getTier() == request.tier())
-                .mapToInt(MovieTierEntry::getSortOrder)
-                .max().orElse(-1) + 1;
+        int nextPosition = tierEntryRepository.findAllByTierOrderBySortOrderAscIdAsc(MovieTier.S).stream()
+                .mapToInt(MovieTierEntry::getSortOrder).max().orElse(-1) + 1;
 
-        MovieTierEntry entry = MovieTierEntry.builder()
-                .movie(movie)
-                .tier(request.tier())
-                .sortOrder(nextPosition)
-                .build();
-
+        MovieTierEntry entry = existingEntry != null ? existingEntry : MovieTierEntry.builder().movie(movie).build();
+        entry.setTier(MovieTier.S);
+        entry.setSortOrder(nextPosition);
         return toResponse(tierEntryRepository.save(entry));
     }
 
     @Override
     @Transactional
     public List<MovieTierEntryResponse> reorderEntries(List<ReorderMovieTierEntryRequest> requests) {
-        List<MovieTierEntry> existingEntries = tierEntryRepository.findAll();
+        List<MovieTierEntry> existingEntries = tierEntryRepository.findAllByTierOrderBySortOrderAscIdAsc(MovieTier.S);
         if (requests == null || requests.size() != existingEntries.size()) {
             throw new ConflictException("Danh sách sắp xếp không khớp với Tier List hiện tại. Hãy tải lại trang và thử lại.");
         }
@@ -106,7 +96,7 @@ public class MovieTierListServiceImpl implements IMovieTierListService {
         Map<Long, MovieTierEntry> entriesById = new HashMap<>();
         existingEntries.forEach(entry -> entriesById.put(entry.getId(), entry));
         Set<Long> receivedIds = new HashSet<>();
-        Map<MovieTier, Set<Integer>> usedPositions = new HashMap<>();
+        Set<Integer> usedPositions = new HashSet<>();
 
         for (ReorderMovieTierEntryRequest request : requests) {
             if (!receivedIds.add(request.id())) {
@@ -119,11 +109,13 @@ public class MovieTierListServiceImpl implements IMovieTierListService {
             if (request.position() < 0) {
                 throw new ConflictException("Vị trí sắp xếp không được âm.");
             }
-            Set<Integer> positions = usedPositions.computeIfAbsent(request.tier(), ignored -> new HashSet<>());
-            if (!positions.add(request.position())) {
-                throw new ConflictException("Vị trí trong tier " + request.tier() + " bị trùng.");
+            if (request.tier() != MovieTier.S) {
+                throw new ConflictException("Masterpiece chỉ hỗ trợ một danh sách đề xuất, không có tier khác.");
             }
-            entry.setTier(request.tier());
+            if (!usedPositions.add(request.position())) {
+                throw new ConflictException("Vị trí phim trong Masterpiece bị trùng.");
+            }
+            entry.setTier(MovieTier.S);
             entry.setSortOrder(request.position());
         }
 
@@ -147,21 +139,13 @@ public class MovieTierListServiceImpl implements IMovieTierListService {
     @Override
     @Transactional
     public void clearEntries() {
-        tierEntryRepository.deleteAllInBatch();
+        tierEntryRepository.deleteAllByTier(MovieTier.S);
     }
 
     private void normalizePositions() {
-        List<MovieTierEntry> entries = tierEntryRepository.findAll().stream()
-                .sorted(Comparator
-                        .comparingInt((MovieTierEntry entry) -> entry.getTier().ordinal())
-                        .thenComparing(MovieTierEntry::getSortOrder)
-                        .thenComparing(MovieTierEntry::getId))
-                .toList();
-        Map<MovieTier, Integer> nextPositions = new HashMap<>();
-        for (MovieTierEntry entry : entries) {
-            int position = nextPositions.getOrDefault(entry.getTier(), 0);
-            entry.setSortOrder(position);
-            nextPositions.put(entry.getTier(), position + 1);
+        List<MovieTierEntry> entries = tierEntryRepository.findAllByTierOrderBySortOrderAscIdAsc(MovieTier.S);
+        for (int index = 0; index < entries.size(); index++) {
+            entries.get(index).setSortOrder(index);
         }
         tierEntryRepository.saveAll(entries);
     }
