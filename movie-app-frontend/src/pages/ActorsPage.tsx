@@ -224,10 +224,9 @@ export default function ActorsPage() {
                   }}
                   className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col cursor-pointer"
                 >
-                  {/* Khung ảnh tỷ lệ 3:4 — dùng background-image thay <img> để box luôn đều nhau,
-                    không bị trình duyệt lấy tỷ lệ ảnh gốc đè lên */}
+                  {/* Ảnh diễn viên cũng dùng khung chân dung cố định 2:3. */}
                   <div
-                    className="aspect-[3/4] w-full flex-shrink-0 bg-gray-900 bg-cover bg-center relative overflow-hidden group-hover:scale-105 transition-transform duration-300"
+                    className="aspect-[2/3] w-full flex-shrink-0 bg-gray-900 bg-cover bg-center relative overflow-hidden group-hover:scale-105 transition-transform duration-300"
                     style={
                       actor.avatarUrl
                         ? { backgroundImage: `url(${actor.avatarUrl})` }

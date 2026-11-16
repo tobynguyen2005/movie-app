@@ -395,10 +395,9 @@ export default function MoviesPage() {
                   }}
                   className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col cursor-pointer"
                 >
-                  {/* Poster chuẩn tỷ lệ 3:4 — dùng background-image thay vì <img> để tránh trình duyệt
-                      lấy tỷ lệ gốc của ảnh đè lên box (nguyên nhân khiến poster cao thấp lệch nhau) */}
+                  {/* Poster luôn giữ khung 2:3; background-size: cover giúp các ảnh đồng đều. */}
                   <div
-                    className="aspect-[3/4] w-full flex-shrink-0 bg-gray-100 dark:bg-gray-700 bg-cover bg-center bg-no-repeat relative overflow-hidden"
+                    className="aspect-[2/3] w-full flex-shrink-0 bg-gray-100 dark:bg-gray-700 bg-cover bg-center bg-no-repeat relative overflow-hidden"
                     style={
                       movie.posterUrl
                         ? { backgroundImage: `url(${movie.posterUrl})` }

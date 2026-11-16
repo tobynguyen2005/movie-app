@@ -41,13 +41,13 @@ export default function MovieDetailModal({ isOpen, onClose, movie }: MovieDetail
         </button>
 
         <div className="flex flex-col md:flex-row md:items-start">
-          {/* Giữ đúng toàn bộ poster, không crop phần đầu/cuối ảnh. */}
-          <div className="w-full md:w-[280px] aspect-[2/3] max-h-[58vh] md:max-h-[70vh] md:shrink-0 bg-gray-950 flex items-center justify-center overflow-hidden">
+          {/* Khung poster cố định 2:3 trên cả mobile và desktop. */}
+          <div className="w-full md:w-[280px] aspect-[2/3] md:shrink-0 bg-gray-950 flex items-center justify-center overflow-hidden">
             {movie.posterUrl ? (
               <img
                 src={movie.posterUrl}
                 alt={`Poster phim ${movie.title}`}
-                className="w-full h-full object-contain block"
+                className="w-full h-full object-cover block"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-6xl font-bold text-gray-300 dark:text-gray-500">

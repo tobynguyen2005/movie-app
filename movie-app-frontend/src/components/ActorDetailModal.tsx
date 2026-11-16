@@ -89,9 +89,9 @@ export default function ActorDetailModal({
         </button>
 
         <div className="relative">
-          {/* Avatar - dùng background-image để tránh lệ thuộc tỷ lệ ảnh gốc */}
+          {/* Ảnh chi tiết diễn viên giữ cùng tỷ lệ 2:3 với thẻ danh sách. */}
           <div
-            className="aspect-[3/4] w-full bg-gray-900 bg-cover bg-center relative overflow-hidden"
+            className="aspect-[2/3] w-full bg-gray-900 bg-cover bg-center relative overflow-hidden"
             style={
               actor.avatarUrl
                 ? { backgroundImage: `url(${actor.avatarUrl})` }
