@@ -519,6 +519,40 @@ export default function MoviesPage() {
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
         movie={selectedMovie}
+        movies={moviePage?.content ?? []}
+        onPrevious={() => {
+          if (!selectedMovie || !moviePage?.content) return;
+          const index = moviePage.content.findIndex(
+            (item) => item.id === selectedMovie.id,
+          );
+          if (index > 0) {
+            setSelectedMovie(moviePage.content[index - 1]);
+          }
+        }}
+        onNext={() => {
+          if (!selectedMovie || !moviePage?.content) return;
+          const index = moviePage.content.findIndex(
+            (item) => item.id === selectedMovie.id,
+          );
+          if (index >= 0 && index < moviePage.content.length - 1) {
+            setSelectedMovie(moviePage.content[index + 1]);
+          }
+        }}
+        hasPrevious={Boolean(
+          selectedMovie &&
+          moviePage?.content &&
+          moviePage.content.findIndex((item) => item.id === selectedMovie.id) > 0,
+        )}
+        hasNext={Boolean(
+          selectedMovie &&
+          moviePage?.content &&
+          (() => {
+            const index = moviePage.content.findIndex(
+              (item) => item.id === selectedMovie.id,
+            );
+            return index >= 0 && index < moviePage.content.length - 1;
+          })(),
+        )}
       />
 
       <ActionPopup

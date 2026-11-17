@@ -20,6 +20,7 @@ import vn.edu.fpt.movieappbackend.service.IMovieService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import vn.edu.fpt.movieappbackend.dto.response.PageResponse;
 import vn.edu.fpt.movieappbackend.specification.MovieSpecification;
@@ -53,7 +54,7 @@ public class MovieServiceImpl implements IMovieService {
             int page,
             int size) {
 
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
 
         Specification<Movie> spec = MovieSpecification.filterMovies(title, releaseYear, country, genreId, maleActorId, femaleActorId, status);
 

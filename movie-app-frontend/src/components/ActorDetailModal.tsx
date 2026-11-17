@@ -144,21 +144,30 @@ export default function ActorDetailModal({
           <div className="grid grid-cols-1 gap-3 mt-5 text-sm">
             <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
               <User className="w-4 h-4 text-indigo-500" />
-              <span>Giới tính: <b>{actor.gender === "MALE" ? "Nam" : actor.gender === "FEMALE" ? "Nữ" : "N/A"}</b></span>
+              <span>
+                Giới tính:{" "}
+                <b>
+                  {actor.gender === "MALE"
+                    ? "Nam"
+                    : actor.gender === "FEMALE"
+                      ? "Nữ"
+                      : "N/A"}
+                </b>
+              </span>
             </div>
             <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
               <Calendar className="w-4 h-4 text-indigo-500" />
-              <span>Ngày sinh: <b>{formattedDob}</b></span>
+              <span>
+                Ngày sinh: <b>{formattedDob}</b>
+              </span>
             </div>
             <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
               <Globe2 className="w-4 h-4 text-indigo-500" />
-              <span>Quốc gia: <b>{actor.country || "Chưa rõ"}</b></span>
+              <span>
+                Quốc gia: <b>{actor.country || "Chưa rõ"}</b>
+              </span>
             </div>
           </div>
-
-          <p className="mt-4 text-xs text-gray-500 dark:text-gray-400 text-center">
-            Dùng phím ← → để chuyển diễn viên · Esc để đóng
-          </p>
         </div>
       </div>
     </div>
